@@ -121,3 +121,45 @@ def test_malformed_fts_input_is_simplified_instead_of_crashing(tmp_path) -> None
 
     assert results
     assert results[0].record_id == "std_001"
+
+
+def test_fts_search_uses_strict_plans_and_title_weighting(tmp_path) -> None:
+    store = _store(tmp_path)
+    store.add(
+        "standards",
+        Standard(
+            id="std_003",
+            title="alpha beta verified standard",
+            body="Short body.",
+            status="active",
+            owner="platform",
+        ),
+    )
+    store.add(
+        "standards",
+        Standard(
+            id="std_004",
+            title="background note",
+            body=" ".join(["alpha", "beta"] * 12),
+            status="active",
+            owner="platform",
+        ),
+    )
+    store.add(
+        "standards",
+        Standard(
+            id="std_005",
+            title="noise alpha candidate",
+            body=" ".join(["noise", "alpha"] * 12),
+            status="active",
+            owner="platform",
+        ),
+    )
+
+    title_results = store.search("standards", "alpha beta", mode="fts", top=2)
+    noisy_results = store.search("standards", "alpha beta noise", mode="fts", top=3)
+
+    assert title_results[0].record_id == "std_003"
+    assert title_results[0].explanation["fts_query_strategy"] == "all_terms"
+    assert noisy_results[0].record_id == "std_003"
+    assert noisy_results[0].explanation["fts_query_strategy"] == "adjacent_terms"
