@@ -12,6 +12,7 @@ htmlcov/
 
 dist/
 build/
+site/
 *.egg-info/
 *.stackdump
 

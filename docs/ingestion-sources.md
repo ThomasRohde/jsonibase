@@ -22,3 +22,16 @@ uv run python examples/ingest_rfc_index.py --query "transport congestion control
 
 The scripts write example workspaces under `example-workspaces/` by default.
 Use `--root` to write elsewhere.
+
+## Pattern
+
+Each ingestion example follows the same shape:
+
+1. Fetch a public structured source.
+2. Normalize records into a Pydantic model.
+3. Configure a `CollectionSpec` with FTS, embedding, and filter fields.
+4. Use JsonIBase to write canonical JSONL and rebuild the derived index.
+5. Run a search query against the generated workspace.
+
+The examples are intentionally outside the library core. JsonIBase does not provide a
+hosted ingestion service or background scheduler.

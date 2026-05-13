@@ -25,3 +25,14 @@ ignore policy is:
 .jsonibase/locks/
 .jsonibase/transactions/
 ```
+
+## CI pattern
+
+Use the library or CLI in CI to validate source files before publishing or deploying:
+
+```shell
+uv run jsonibase validate --root . --collection standards --path data/standards.jsonl --fts title --fts body
+```
+
+For Python applications, call `store.validate()` and fail the job when
+`ValidationReport.ok` is false.

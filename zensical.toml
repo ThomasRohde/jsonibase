@@ -1,0 +1,37 @@
+[project]
+site_name = "JsonIBase"
+site_url = "https://thomasrohde.github.io/jsonibase/"
+site_description = "Typed JSONL records with SQLite, FTS5, and built-in local embeddings."
+site_author = "Thomas Klok Rohde"
+repo_url = "https://github.com/ThomasRohde/jsonibase"
+copyright = "MIT licensed."
+docs_dir = "docs"
+site_dir = "site"
+nav = [
+  {"Home" = "index.md"},
+  {"Get Started" = [
+    {"Installation" = "installation.md"},
+    {"Quickstart" = "quickstart.md"},
+  ]},
+  {"Reference" = [
+    {"Python API" = "api.md"},
+    {"CLI" = "cli.md"},
+  ]},
+  {"Guides" = [
+    {"JSONL Sources" = "guides/jsonl-sources.md"},
+    {"SQLite Indexes" = "guides/sqlite-indexes.md"},
+    {"Search" = "guides/search.md"},
+    {"Validation" = "guides/validation.md"},
+    {"Embeddings" = "embedding-model.md"},
+    {"External Integration" = "external-integration.md"},
+  ]},
+  {"Examples" = [
+    {"Basic Usage" = "examples.md"},
+    {"Ingestion Sources" = "ingestion-sources.md"},
+  ]},
+  {"Troubleshooting" = "troubleshooting.md"},
+  {"Development" = [
+    {"Contributing" = "development.md"},
+    {"GitHub Pages" = "deployment.md"},
+  ]},
+]
