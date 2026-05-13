@@ -17,10 +17,12 @@ def test_cli_guide_returns_json_envelope_without_vcs_commands() -> None:
     result = runner.invoke(app, ["guide"])
 
     assert result.exit_code == 0
+    assert result.stdout.startswith("{\n")
     payload = _payload(result)
     assert payload["ok"] is True
     assert payload["command"] == "guide"
-    commands = payload["data"]["commands"]
+    data = payload["data"]
+    commands = data["commands"]
     assert {
         "init",
         "status",
@@ -34,6 +36,16 @@ def test_cli_guide_returns_json_envelope_without_vcs_commands() -> None:
     }.issubset(commands)
     assert "git" not in commands
     assert "github" not in commands
+    assert data["schema_version"] == 1
+    assert data["output_envelope"]["parsing"].startswith("Parse all stdout")
+    assert commands["search"]["required_options"] == [
+        "--root",
+        "--collection",
+        "--path",
+        "--query",
+    ]
+    assert commands["apply"]["extra_options"]["--op"] == "add, update, or upsert."
+    assert any(workflow["name"] == "Mutate safely" for workflow in data["agent_workflows"])
 
 
 def test_cli_init_validate_build_status_get_list_and_search(tmp_path) -> None:

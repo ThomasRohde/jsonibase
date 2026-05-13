@@ -5,8 +5,9 @@ description = "Typed JSONL records with SQLite, FTS5, and built-in local embeddi
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-  { name = "Thomas Klok Rohde" }
+  { name = "Thomas Klok Rohde", email = "rohde.thomas@gmail.com" }
 ]
 keywords = [
   "jsonl",
@@ -23,6 +24,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Typing :: Typed",
 ]
 dependencies = [
@@ -31,12 +33,12 @@ dependencies = [
   "portalocker>=2",
   "numpy>=2",
   "model2vec>=0.3",
+  "typer>=0.12",
 ]
 
 [project.optional-dependencies]
 cli = [
   "typer>=0.12",
-  "rich>=13",
 ]
 dev = [
   "pytest>=8",
@@ -52,8 +54,13 @@ dev = [
 [project.scripts]
 jsonibase = "jsonibase.cli.main:main"
 
+[project.urls]
+Homepage = "https://github.com/ThomasRohde/jsonibase"
+Issues = "https://github.com/ThomasRohde/jsonibase/issues"
+Changelog = "https://github.com/ThomasRohde/jsonibase/blob/main/CHANGELOG.md"
+
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
@@ -66,10 +73,23 @@ include = [
   "src/jsonibase/models/potion-base-8M/**",
 ]
 
+[tool.hatch.build.targets.sdist]
+include = [
+  "src/jsonibase",
+  "tests",
+  "docs",
+  "examples",
+  "scripts",
+  "README.md",
+  "LICENSE",
+  "CHANGELOG.md",
+  "RELEASE.md",
+]
+
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-src = ["src", "tests"]
+src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = [

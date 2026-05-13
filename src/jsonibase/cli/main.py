@@ -25,23 +25,7 @@ def main() -> None:
 
 @app.command()
 def guide() -> None:
-    _emit(
-        "guide",
-        {
-            "commands": [
-                "guide",
-                "init",
-                "status",
-                "validate",
-                "build",
-                "search",
-                "get",
-                "list",
-                "plan",
-                "apply",
-            ]
-        },
-    )
+    _emit("guide", _guide_payload())
 
 
 @app.command()
@@ -273,6 +257,259 @@ def _record_payload(record: BaseModel | None) -> dict[str, Any] | None:
     return record.model_dump(mode="json")
 
 
+def _guide_payload() -> dict[str, Any]:
+    common_options = {
+        "--root": "Workspace root. Defaults to the current directory.",
+        "--collection": "Logical collection name. Required for workspace commands.",
+        "--path": "JSONL source path for the collection, relative to --root unless absolute.",
+        "--fts": "Repeatable field name to include in full-text search.",
+        "--embedding": "Repeatable field name to include in local embedding text.",
+        "--filter": "Repeatable field name allowed in --filter-eq expressions.",
+    }
+    collection_example = [
+        "--root",
+        ".",
+        "--collection",
+        "standards",
+        "--path",
+        "data/standards.jsonl",
+        "--fts",
+        "title",
+        "--fts",
+        "body",
+        "--embedding",
+        "title",
+        "--embedding",
+        "body",
+        "--filter",
+        "status",
+    ]
+    filter_eq_help = (
+        "Repeatable field=value filter. Field must also be declared with --filter."
+    )
+    record_json = (
+        '{"id":"std_001","title":"Managed services","body":"Prefer managed services.",'
+        '"status":"active"}'
+    )
+    return {
+        "schema_version": 1,
+        "purpose": (
+            "Manage a local JsonIBase workspace: typed JSONL source files plus a derived "
+            "SQLite FTS/vector search index."
+        ),
+        "run": {
+            "installed": "jsonibase guide",
+            "from_repo": "uv run jsonibase guide",
+            "python_module": "uv run python -m jsonibase.cli.main guide",
+        },
+        "invariants": [
+            "JSONL files are the source of truth.",
+            "SQLite index files under .jsonibase/ are derived artifacts.",
+            "Every source record must include an id field.",
+            "CLI output is a pretty-printed JSON envelope.",
+            "The CLI does not perform Git or GitHub actions.",
+        ],
+        "output_envelope": {
+            "success": {"ok": True, "command": "<command>", "data": "<command result>"},
+            "error": {
+                "ok": False,
+                "command": "<command>",
+                "error": {
+                    "code": "<stable error code>",
+                    "message": "<human message>",
+                    "details": "<structured details>",
+                },
+            },
+            "parsing": "Parse all stdout as one JSON document. Do not expect JSON Lines.",
+        },
+        "common_options": common_options,
+        "commands": {
+            "guide": {
+                "purpose": "Return this machine-readable usage guide.",
+                "example": ["jsonibase", "guide"],
+            },
+            "init": {
+                "purpose": "Create metadata directories and the configured JSONL file if missing.",
+                "required_options": ["--root", "--collection", "--path"],
+                "common_options_supported": True,
+                "example": ["jsonibase", "init", *collection_example],
+                "data_shape": {"root": "string", "collection": "string", "path": "string"},
+            },
+            "validate": {
+                "purpose": "Validate source JSONL syntax, record schema, ids, and relationships.",
+                "required_options": ["--root", "--collection", "--path"],
+                "common_options_supported": True,
+                "example": ["jsonibase", "validate", *collection_example],
+                "data_shape": {"ok": "boolean", "findings": "list"},
+            },
+            "build": {
+                "purpose": "Rebuild the derived SQLite index from JSONL source files.",
+                "required_options": ["--root", "--collection", "--path"],
+                "common_options_supported": True,
+                "example": ["jsonibase", "build", *collection_example],
+                "data_shape": {},
+            },
+            "status": {
+                "purpose": "Report whether the derived index is fresh, missing, stale, or invalid.",
+                "required_options": ["--root", "--collection", "--path"],
+                "common_options_supported": True,
+                "example": ["jsonibase", "status", *collection_example],
+                "data_shape": {
+                    "index_exists": "boolean",
+                    "stale": "boolean",
+                    "reason": [
+                        "fresh",
+                        "missing",
+                        "invalid",
+                        "source_changed",
+                        "config_changed",
+                        "embedding_changed",
+                    ],
+                },
+            },
+            "search": {
+                "purpose": "Search a collection using hybrid FTS plus local embeddings by default.",
+                "required_options": ["--root", "--collection", "--path", "--query"],
+                "common_options_supported": True,
+                "extra_options": {
+                    "--query": "Search text.",
+                    "--filter-eq": filter_eq_help,
+                    "--top": "Maximum number of results. Defaults to 10.",
+                },
+                "example": [
+                    "jsonibase",
+                    "search",
+                    *collection_example,
+                    "--query",
+                    "managed services",
+                    "--filter-eq",
+                    "status=active",
+                    "--top",
+                    "5",
+                ],
+                "data_shape": {"results": "list of SearchResult objects"},
+            },
+            "get": {
+                "purpose": "Read one source record by id. Does not require a fresh index.",
+                "required_options": ["--root", "--collection", "--path", "--id"],
+                "common_options_supported": True,
+                "extra_options": {"--id": "Record id."},
+                "example": ["jsonibase", "get", *collection_example, "--id", "std_001"],
+                "data_shape": {"record": "object|null"},
+            },
+            "list": {
+                "purpose": "Read source records, optionally filtered with equality filters.",
+                "required_options": ["--root", "--collection", "--path"],
+                "common_options_supported": True,
+                "extra_options": {"--filter-eq": filter_eq_help},
+                "example": [
+                    "jsonibase",
+                    "list",
+                    *collection_example,
+                    "--filter-eq",
+                    "status=active",
+                ],
+                "data_shape": {"records": "list of record objects"},
+            },
+            "plan": {
+                "purpose": "Preview a source mutation without writing it.",
+                "required_options": ["--root", "--collection", "--path", "--op"],
+                "common_options_supported": True,
+                "extra_options": {
+                    "--op": "add, update, or upsert.",
+                    "--record": "JSON object string for add or upsert. Must include id.",
+                    "--id": "Record id for update.",
+                    "--patch": "JSON object string for update.",
+                },
+                "examples": [
+                    [
+                        "jsonibase",
+                        "plan",
+                        *collection_example,
+                        "--op",
+                        "upsert",
+                        "--record",
+                        record_json,
+                    ],
+                    [
+                        "jsonibase",
+                        "plan",
+                        *collection_example,
+                        "--op",
+                        "update",
+                        "--id",
+                        "std_001",
+                        "--patch",
+                        '{"status":"retired"}',
+                    ],
+                ],
+                "data_shape": {"change_set_id": "string", "operations": "list"},
+            },
+            "apply": {
+                "purpose": "Apply a source mutation transactionally after validation.",
+                "required_options": ["--root", "--collection", "--path", "--op"],
+                "common_options_supported": True,
+                "extra_options": {
+                    "--op": "add, update, or upsert.",
+                    "--record": "JSON object string for add or upsert. Must include id.",
+                    "--id": "Record id for update.",
+                    "--patch": "JSON object string for update.",
+                },
+                "example": [
+                    "jsonibase",
+                    "apply",
+                    *collection_example,
+                    "--op",
+                    "upsert",
+                    "--record",
+                    record_json,
+                ],
+                "data_shape": {"change_set_id": "string", "changed_files": "list"},
+            },
+        },
+        "agent_workflows": [
+            {
+                "name": "Inspect an existing workspace",
+                "steps": [
+                    "Run guide to learn the contract.",
+                    "Run status with the same collection options the user expects.",
+                    "Run validate if status is invalid or source correctness matters.",
+                    "Run get, list, or search depending on the task.",
+                ],
+            },
+            {
+                "name": "Create and search a simple workspace",
+                "steps": [
+                    "Run init with --root, --collection, --path, and field options.",
+                    "Use apply --op upsert --record JSON to add records.",
+                    "Run build, or let search lazily rebuild a stale index.",
+                    "Run search with --query and optional --filter-eq.",
+                ],
+            },
+            {
+                "name": "Mutate safely",
+                "steps": [
+                    "Run plan first for add, update, or upsert.",
+                    "Inspect data.operations and record ids.",
+                    "Run apply only when the planned operation matches the user request.",
+                    "Run validate or status afterward if the caller needs verification.",
+                ],
+            },
+        ],
+        "notes_for_agents": [
+            "Use uv run jsonibase ... inside an uninstalled source checkout.",
+            "Repeat --fts, --embedding, and --filter for multiple fields.",
+            "Pass --record and --patch as valid JSON object strings.",
+            "For PowerShell, escape inner JSON quotes or use single quotes around the JSON.",
+            (
+                "Keep collection configuration options consistent across init, build, "
+                "status, and search."
+            ),
+            "Use --filter to declare fields before using --filter-eq field=value.",
+        ],
+    }
+
+
 def _run_json(command: str, callback: Any) -> None:
     try:
         callback()
@@ -283,13 +520,13 @@ def _run_json(command: str, callback: Any) -> None:
 
 
 def _emit(command: str, data: Any, *, ok: bool = True, exit_code: int = 0) -> None:
-    typer.echo(json.dumps({"ok": ok, "command": command, "data": data}, sort_keys=True))
+    typer.echo(_json_dump({"ok": ok, "command": command, "data": data}))
     raise typer.Exit(exit_code)
 
 
 def _emit_error(command: str, error: JsonIBaseError) -> None:
     typer.echo(
-        json.dumps(
+        _json_dump(
             {
                 "ok": False,
                 "command": command,
@@ -298,8 +535,11 @@ def _emit_error(command: str, error: JsonIBaseError) -> None:
                     "message": error.message,
                     "details": error.details,
                 },
-            },
-            sort_keys=True,
+            }
         )
     )
     raise typer.Exit(1)
+
+
+def _json_dump(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, indent=2, sort_keys=True)

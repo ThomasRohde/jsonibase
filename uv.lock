@@ -506,11 +506,11 @@ dependencies = [
     { name = "orjson" },
     { name = "portalocker" },
     { name = "pydantic" },
+    { name = "typer" },
 ]
 
 [package.optional-dependencies]
 cli = [
-    { name = "rich" },
     { name = "typer" },
 ]
 dev = [
@@ -537,9 +537,9 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-benchmark", marker = "extra == 'dev'", specifier = ">=4" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5" },
-    { name = "rich", marker = "extra == 'cli'", specifier = ">=13" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=5" },
+    { name = "typer", specifier = ">=0.12" },
     { name = "typer", marker = "extra == 'cli'", specifier = ">=0.12" },
 ]
 provides-extras = ["cli", "dev"]

@@ -20,7 +20,9 @@ def test_pyproject_declares_jsonibase_package() -> None:
     assert "portalocker>=2" in project["dependencies"]
     assert "numpy>=2" in project["dependencies"]
     assert "model2vec>=0.3" in project["dependencies"]
+    assert "typer>=0.12" in project["dependencies"]
     assert project["scripts"]["jsonibase"] == "jsonibase.cli.main:main"
+    assert project["urls"]["Homepage"] == "https://github.com/ThomasRohde/jsonibase"
 
     assert data["build-system"]["build-backend"] == "hatchling.build"
     assert data["tool"]["ruff"]["target-version"] == "py313"

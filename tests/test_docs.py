@@ -20,7 +20,12 @@ def test_release_readiness_docs_exist() -> None:
         ROOT / "docs" / "cli.md",
         ROOT / "docs" / "embedding-model.md",
         ROOT / "docs" / "external-integration.md",
+        ROOT / "CHANGELOG.md",
         ROOT / "RELEASE.md",
+        ROOT / ".github" / "workflows" / "ci.yml",
+        ROOT / ".github" / "workflows" / "publish.yml",
+        ROOT / "scripts" / "release.py",
+        ROOT / "scripts" / "verify_model_manifest.py",
         ROOT / "examples" / "basic_usage.py",
     ]
 
