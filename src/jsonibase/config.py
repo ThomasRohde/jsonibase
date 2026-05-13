@@ -4,9 +4,9 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 DeletionPolicy = Literal["forbid", "tombstone", "hard"]
 _COLLECTION_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
@@ -16,6 +16,10 @@ class RelationshipSpec(BaseModel):
     field: str
     target_collection: str
     target_field: str = "id"
+
+
+type FieldNames = list[str] | tuple[str, ...]
+type RelationshipSpecs = list[RelationshipSpec] | tuple[RelationshipSpec, ...]
 
 
 class CollectionSpec[TRecord: BaseModel](BaseModel):
@@ -28,13 +32,33 @@ class CollectionSpec[TRecord: BaseModel](BaseModel):
     model: type[TRecord]
     id_field: str = "id"
     title_field: str | None = None
-    fts_fields: tuple[str, ...] = Field(default_factory=tuple)
-    embedding_fields: tuple[str, ...] = Field(default_factory=tuple)
-    filter_fields: tuple[str, ...] = Field(default_factory=tuple)
-    sort_fields: tuple[str, ...] = Field(default_factory=tuple)
-    relationships: tuple[RelationshipSpec, ...] = Field(default_factory=tuple)
-    redacted_fields: tuple[str, ...] = Field(default_factory=tuple)
+    fts_fields: FieldNames = Field(default_factory=tuple)
+    embedding_fields: FieldNames = Field(default_factory=tuple)
+    filter_fields: FieldNames = Field(default_factory=tuple)
+    sort_fields: FieldNames = Field(default_factory=tuple)
+    relationships: RelationshipSpecs = Field(default_factory=tuple)
+    redacted_fields: FieldNames = Field(default_factory=tuple)
     deletion: DeletionPolicy = "forbid"
+
+    @field_validator(
+        "fts_fields",
+        "embedding_fields",
+        "filter_fields",
+        "sort_fields",
+        "redacted_fields",
+        mode="after",
+    )
+    @classmethod
+    def freeze_field_names(cls, value: FieldNames) -> tuple[str, ...]:
+        return tuple(value)
+
+    @field_validator("relationships", mode="after")
+    @classmethod
+    def freeze_relationships(
+        cls,
+        value: RelationshipSpecs,
+    ) -> tuple[RelationshipSpec, ...]:
+        return tuple(value)
 
     @model_validator(mode="after")
     def validate_spec(self) -> CollectionSpec[TRecord]:
@@ -66,10 +90,19 @@ class CollectionSpec[TRecord: BaseModel](BaseModel):
         return self
 
 
+type AnyCollectionSpec = CollectionSpec[Any]
+type CollectionSpecs = list[AnyCollectionSpec] | tuple[AnyCollectionSpec, ...]
+
+
 class JsonIBaseConfig(BaseModel):
-    collections: tuple[CollectionSpec[BaseModel], ...]
+    collections: CollectionSpecs
     index_path: Path = Path(".jsonibase/jsonibase.db")
     rebuild_policy: Literal["eager", "lazy", "manual"] = "lazy"
+
+    @field_validator("collections", mode="after")
+    @classmethod
+    def freeze_collections(cls, value: CollectionSpecs) -> tuple[AnyCollectionSpec, ...]:
+        return tuple(value)
 
     @property
     def fingerprint(self) -> str:
@@ -77,7 +110,7 @@ class JsonIBaseConfig(BaseModel):
 
 
 def config_fingerprint(
-    collections: list[CollectionSpec[BaseModel]] | tuple[CollectionSpec[BaseModel], ...],
+    collections: CollectionSpecs,
 ) -> str:
     payload = [_collection_fingerprint_payload(spec) for spec in collections]
     payload.sort(key=lambda item: str(item["name"]))
@@ -85,7 +118,7 @@ def config_fingerprint(
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
-def _collection_fingerprint_payload(spec: CollectionSpec[BaseModel]) -> dict[str, object]:
+def _collection_fingerprint_payload(spec: AnyCollectionSpec) -> dict[str, object]:
     return {
         "name": spec.name,
         "path": str(spec.path).replace("\\", "/"),

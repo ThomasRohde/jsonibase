@@ -3,9 +3,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from pydantic import BaseModel
-
-from jsonibase.config import CollectionSpec, config_fingerprint
+from jsonibase.config import CollectionSpecs, config_fingerprint
 from jsonibase.models import SourceFileManifest, SourceManifest
 
 EMPTY_SHA256 = f"sha256:{hashlib.sha256(b'').hexdigest()}"
@@ -14,7 +12,7 @@ EMPTY_SHA256 = f"sha256:{hashlib.sha256(b'').hexdigest()}"
 def build_source_manifest(
     *,
     root: str | Path,
-    collections: list[CollectionSpec[BaseModel]] | tuple[CollectionSpec[BaseModel], ...],
+    collections: CollectionSpecs,
     embedding_fingerprint: str,
 ) -> SourceManifest:
     root_path = Path(root)

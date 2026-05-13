@@ -6,7 +6,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from jsonibase.config import CollectionSpec
+from jsonibase.config import CollectionSpecs
 from jsonibase.index.builder import DEFAULT_EMBEDDING_FINGERPRINT
 from jsonibase.models import SourceFileManifest, SourceManifest
 from jsonibase.source.manifest import build_source_manifest
@@ -32,7 +32,7 @@ class IndexStatus(BaseModel):
 def index_status(
     *,
     root: str | Path,
-    collections: list[CollectionSpec[BaseModel]] | tuple[CollectionSpec[BaseModel], ...],
+    collections: CollectionSpecs,
     index_path: str | Path,
     embedding_fingerprint: str = DEFAULT_EMBEDDING_FINGERPRINT,
 ) -> IndexStatus:

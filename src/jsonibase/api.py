@@ -11,7 +11,7 @@ from uuid import uuid4
 import portalocker
 from pydantic import BaseModel
 
-from jsonibase.config import CollectionSpec
+from jsonibase.config import AnyCollectionSpec, CollectionSpecs
 from jsonibase.embeddings import EmbeddingProvider
 from jsonibase.errors import JsonIBaseError
 from jsonibase.index import (
@@ -77,7 +77,7 @@ class JsonIBase:
     """Main facade for a JsonIBase workspace."""
 
     root: Path
-    collections: tuple[CollectionSpec[BaseModel], ...]
+    collections: tuple[AnyCollectionSpec, ...]
     index_path: Path
     rebuild_policy: str = "lazy"
     embedding_provider: Any | None = None
@@ -87,7 +87,7 @@ class JsonIBase:
     def open(
         cls,
         root: str | Path,
-        collections: list[CollectionSpec[BaseModel]] | tuple[CollectionSpec[BaseModel], ...],
+        collections: CollectionSpecs,
         index_path: str | Path = ".jsonibase/jsonibase.db",
         rebuild_policy: str = "lazy",
         embedding_provider: EmbeddingProvider | None = None,
@@ -332,10 +332,10 @@ class JsonIBase:
             details={"reason": status.reason},
         )
 
-    def _collection(self, name: str) -> CollectionSpec[BaseModel]:
+    def _collection(self, name: str) -> AnyCollectionSpec:
         return self.collection_spec(name)
 
-    def collection_spec(self, name: str) -> CollectionSpec[BaseModel]:
+    def collection_spec(self, name: str) -> AnyCollectionSpec:
         for spec in self.collections:
             if spec.name == name:
                 return spec
@@ -345,17 +345,17 @@ class JsonIBase:
             details={"collection": name},
         )
 
-    def _source_path(self, spec: CollectionSpec[BaseModel]) -> Path:
+    def _source_path(self, spec: AnyCollectionSpec) -> Path:
         path = Path(spec.path)
         return path if path.is_absolute() else self.root / path
 
-    def _load_collection(self, spec: CollectionSpec[BaseModel]) -> list[BaseModel]:
+    def _load_collection(self, spec: AnyCollectionSpec) -> list[BaseModel]:
         return [entry.record for entry in read_jsonl(self._source_path(spec), spec)]
 
     def _commit_collection(
         self,
         *,
-        spec: CollectionSpec[BaseModel],
+        spec: AnyCollectionSpec,
         records: list[BaseModel],
         before: dict[str, Any],
         after: dict[str, Any],
@@ -537,7 +537,7 @@ class JsonIBase:
 
     def _apply_update_operation(
         self,
-        spec: CollectionSpec[BaseModel],
+        spec: AnyCollectionSpec,
         records: list[BaseModel],
         record_id: str,
         patch: dict[str, Any],
@@ -572,7 +572,7 @@ class JsonIBase:
 
     def _apply_upsert_operation(
         self,
-        spec: CollectionSpec[BaseModel],
+        spec: AnyCollectionSpec,
         records: list[BaseModel],
         record: BaseModel,
         before: dict[str, Any],
@@ -594,9 +594,9 @@ class JsonIBase:
         return next_records
 
     @staticmethod
-    def _record_id(spec: CollectionSpec[BaseModel], record: BaseModel) -> str:
+    def _record_id(spec: AnyCollectionSpec, record: BaseModel) -> str:
         return JsonIBase.record_id_for(spec, record)
 
     @staticmethod
-    def record_id_for(spec: CollectionSpec[BaseModel], record: BaseModel) -> str:
+    def record_id_for(spec: AnyCollectionSpec, record: BaseModel) -> str:
         return str(getattr(record, spec.id_field))

@@ -5,12 +5,12 @@ from typing import Any, cast
 
 from pydantic import BaseModel
 
-from jsonibase.config import CollectionSpec
+from jsonibase.config import AnyCollectionSpec
 from jsonibase.errors import JsonIBaseError
 
 
 def filter_records(
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     records: list[BaseModel],
     filters: dict[str, Any] | None,
 ) -> list[BaseModel]:
@@ -31,7 +31,7 @@ def filter_records(
 
 
 def sort_records(
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     records: list[BaseModel],
     sort: list[str] | tuple[str, ...] | None,
 ) -> list[BaseModel]:

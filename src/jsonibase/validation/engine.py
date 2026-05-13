@@ -6,7 +6,7 @@ from typing import Protocol, cast
 
 from pydantic import BaseModel
 
-from jsonibase.config import CollectionSpec
+from jsonibase.config import AnyCollectionSpec, CollectionSpecs
 from jsonibase.source.jsonl import JsonlRecord, JsonlSourceError, read_jsonl
 from jsonibase.validation.findings import ValidationFinding, ValidationReport
 
@@ -14,7 +14,7 @@ from jsonibase.validation.findings import ValidationFinding, ValidationReport
 @dataclass(frozen=True)
 class ValidationContext:
     root: Path
-    collections: dict[str, CollectionSpec[BaseModel]]
+    collections: dict[str, AnyCollectionSpec]
     records: dict[str, list[JsonlRecord[BaseModel]]]
 
 
@@ -26,7 +26,7 @@ class Validator(Protocol):
 
 def validate_workspace(
     root: str | Path,
-    collections: list[CollectionSpec[BaseModel]] | tuple[CollectionSpec[BaseModel], ...],
+    collections: CollectionSpecs,
     validators: list[Validator] | tuple[Validator, ...] = (),
 ) -> ValidationReport:
     root_path = Path(root)

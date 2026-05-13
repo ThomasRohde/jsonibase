@@ -12,7 +12,7 @@ import orjson
 from numpy.typing import NDArray
 from pydantic import BaseModel
 
-from jsonibase.config import CollectionSpec
+from jsonibase.config import AnyCollectionSpec, CollectionSpecs
 from jsonibase.embeddings import EmbeddingProvider, Model2VecEmbeddingProvider, serialize_vector
 from jsonibase.errors import JsonIBaseError
 from jsonibase.index.sqlite import connect_index
@@ -29,7 +29,7 @@ DISABLED_EMBEDDING_FINGERPRINT = "sha256:embeddings-disabled"
 def rebuild_index(
     *,
     root: str | Path,
-    collections: list[CollectionSpec[BaseModel]] | tuple[CollectionSpec[BaseModel], ...],
+    collections: CollectionSpecs,
     index_path: str | Path,
     embedding_fingerprint: str = DEFAULT_EMBEDDING_FINGERPRINT,
     embedding_provider: EmbeddingProvider | None = None,
@@ -101,7 +101,7 @@ def _create_manifest_table(conn: sqlite3.Connection) -> None:
     )
 
 
-def _create_collection_schema(conn: sqlite3.Connection, spec: CollectionSpec[BaseModel]) -> None:
+def _create_collection_schema(conn: sqlite3.Connection, spec: AnyCollectionSpec) -> None:
     table_name = _collection_table(spec)
     columns = [
         '"id" TEXT PRIMARY KEY',
@@ -129,7 +129,7 @@ def _create_collection_schema(conn: sqlite3.Connection, spec: CollectionSpec[Bas
 
 def _insert_records(
     conn: sqlite3.Connection,
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     records: list[JsonlRecord[BaseModel]],
     embedding_provider: EmbeddingProvider | None,
 ) -> None:
@@ -205,7 +205,7 @@ def _insert_manifest(conn: sqlite3.Connection, manifest: SourceManifest) -> None
         )
 
 
-def _indexed_columns(spec: CollectionSpec[BaseModel]) -> list[str]:
+def _indexed_columns(spec: AnyCollectionSpec) -> list[str]:
     fields = [field for field in [spec.title_field, *spec.filter_fields] if field is not None]
     return sorted(set(fields) - {spec.id_field})
 
@@ -222,20 +222,20 @@ def _fts_field_value(value: object) -> str:
     return str(value)
 
 
-def _embedding_text(spec: CollectionSpec[BaseModel], record: BaseModel) -> str:
+def _embedding_text(spec: AnyCollectionSpec, record: BaseModel) -> str:
     fields = spec.embedding_fields or spec.fts_fields
     return " ".join(_fts_field_value(getattr(record, field)) for field in fields)
 
 
-def _collection_table(spec: CollectionSpec[BaseModel]) -> str:
+def _collection_table(spec: AnyCollectionSpec) -> str:
     return f"ji_{spec.name}"
 
 
-def _fts_table(spec: CollectionSpec[BaseModel]) -> str:
+def _fts_table(spec: AnyCollectionSpec) -> str:
     return f"{_collection_table(spec)}_fts"
 
 
-def _source_path(root: Path, spec: CollectionSpec[BaseModel]) -> Path:
+def _source_path(root: Path, spec: AnyCollectionSpec) -> Path:
     source_path = Path(spec.path)
     return source_path if source_path.is_absolute() else root / source_path
 

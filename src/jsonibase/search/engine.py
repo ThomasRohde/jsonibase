@@ -10,9 +10,8 @@ from typing import Any, Literal, cast
 
 import numpy as np
 import orjson
-from pydantic import BaseModel
 
-from jsonibase.config import CollectionSpec
+from jsonibase.config import AnyCollectionSpec
 from jsonibase.embeddings import EmbeddingProvider, deserialize_vector
 from jsonibase.errors import JsonIBaseError
 from jsonibase.models import SearchResult
@@ -38,7 +37,7 @@ class _PlannedFtsQuery:
 def search_index(
     *,
     index_path: str | Path,
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     query: str,
     mode: SearchMode,
     filters: dict[str, Any] | None,
@@ -73,7 +72,7 @@ def search_index(
 
 def _fts_search(
     conn: sqlite3.Connection,
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     query: str,
     filters: dict[str, Any],
     top: int,
@@ -133,7 +132,7 @@ def _fts_search(
 
 def _vector_search(
     conn: sqlite3.Connection,
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     query: str,
     filters: dict[str, Any],
     top: int,
@@ -181,7 +180,7 @@ def _vector_search(
 
 def _hybrid_search(
     conn: sqlite3.Connection,
-    spec: CollectionSpec[BaseModel],
+    spec: AnyCollectionSpec,
     query: str,
     filters: dict[str, Any],
     top: int,
@@ -211,7 +210,7 @@ def _hybrid_search(
     return final[:top]
 
 
-def _filter_sql(spec: CollectionSpec[BaseModel], filters: dict[str, Any]) -> tuple[str, list[str]]:
+def _filter_sql(spec: AnyCollectionSpec, filters: dict[str, Any]) -> tuple[str, list[str]]:
     clauses: list[str] = []
     values: list[str] = []
     allowed = set(spec.filter_fields)
@@ -250,7 +249,7 @@ def _raw_record(json_text: str) -> dict[str, Any]:
     return cast(dict[str, Any], orjson.loads(json_text))
 
 
-def _redact_record(spec: CollectionSpec[BaseModel], record: dict[str, Any]) -> dict[str, Any]:
+def _redact_record(spec: AnyCollectionSpec, record: dict[str, Any]) -> dict[str, Any]:
     if not spec.redacted_fields:
         return record
     redacted: dict[str, Any] = dict(record)
@@ -260,7 +259,7 @@ def _redact_record(spec: CollectionSpec[BaseModel], record: dict[str, Any]) -> d
     return redacted
 
 
-def _snippet(spec: CollectionSpec[BaseModel], record: dict[str, Any], query: str) -> str | None:
+def _snippet(spec: AnyCollectionSpec, record: dict[str, Any], query: str) -> str | None:
     tokens = re.findall(r"[\w]+", query.casefold())
     for field_name in spec.fts_fields:
         value = record.get(field_name)
@@ -319,14 +318,14 @@ def _dedupe_planned_queries(plans: list[_PlannedFtsQuery]) -> list[_PlannedFtsQu
     return deduped
 
 
-def _fts_score_expression(spec: CollectionSpec[BaseModel]) -> tuple[str, list[float]]:
+def _fts_score_expression(spec: AnyCollectionSpec) -> tuple[str, list[float]]:
     fts_table = _fts_table(spec)
     weights = [0.0, *(_fts_field_weight(spec, field_name) for field_name in spec.fts_fields)]
     placeholders = ", ".join("?" for _ in weights)
     return f"bm25({_quote_identifier(fts_table)}, {placeholders})", weights
 
 
-def _fts_field_weight(spec: CollectionSpec[BaseModel], field_name: str) -> float:
+def _fts_field_weight(spec: AnyCollectionSpec, field_name: str) -> float:
     if spec.title_field == field_name:
         return _DEFAULT_TITLE_FTS_WEIGHT
     return 1.0
@@ -336,11 +335,11 @@ def _rrf_score(rank: int, k: int = 60) -> float:
     return 1.0 / (k + rank)
 
 
-def _collection_table(spec: CollectionSpec[BaseModel]) -> str:
+def _collection_table(spec: AnyCollectionSpec) -> str:
     return f"ji_{spec.name}"
 
 
-def _fts_table(spec: CollectionSpec[BaseModel]) -> str:
+def _fts_table(spec: AnyCollectionSpec) -> str:
     return f"{_collection_table(spec)}_fts"
 
 
