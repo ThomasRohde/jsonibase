@@ -103,7 +103,7 @@ def cut(version: str, dry: bool) -> int:
     _git("commit", "-m", f"Release {version}")
     _git("tag", "-a", f"v{version}", "-m", f"jsonibase {version}")
     print(f"cut v{version}. Push with:")
-    print(f"  git push origin main v{version}")
+    print(f"  git push origin master v{version}")
     return 0
 
 

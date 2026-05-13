@@ -144,7 +144,7 @@ Cut a release from a clean tree:
 
 ```shell
 python scripts/release.py 0.1.0
-git push origin main v0.1.0
+git push origin master v0.1.0
 ```
 
 The tag triggers GitHub Actions to build, check, upload to PyPI, and create a
@@ -152,7 +152,7 @@ GitHub Release. After the release, open the next development cycle:
 
 ```shell
 python scripts/release.py --post-release 0.2.0.dev0
-git push origin main
+git push origin master
 ```
 
 ## License

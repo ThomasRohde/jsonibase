@@ -23,6 +23,7 @@ def test_pyproject_declares_jsonibase_package() -> None:
     assert "typer>=0.12" in project["dependencies"]
     assert project["scripts"]["jsonibase"] == "jsonibase.cli.main:main"
     assert project["urls"]["Homepage"] == "https://github.com/ThomasRohde/jsonibase"
+    assert project["urls"]["Changelog"].endswith("/blob/master/CHANGELOG.md")
 
     assert data["build-system"]["build-backend"] == "hatchling.build"
     assert data["tool"]["ruff"]["target-version"] == "py313"

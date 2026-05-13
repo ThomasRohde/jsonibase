@@ -41,7 +41,7 @@ From a clean tree:
 
 ```shell
 python scripts/release.py 0.1.0
-git push origin main v0.1.0
+git push origin master v0.1.0
 ```
 
 The tag push triggers `.github/workflows/publish.yml`, which builds the sdist
@@ -52,5 +52,5 @@ Open the next development cycle after the release:
 
 ```shell
 python scripts/release.py --post-release 0.2.0.dev0
-git push origin main
+git push origin master
 ```

@@ -57,7 +57,7 @@ jsonibase = "jsonibase.cli.main:main"
 [project.urls]
 Homepage = "https://github.com/ThomasRohde/jsonibase"
 Issues = "https://github.com/ThomasRohde/jsonibase/issues"
-Changelog = "https://github.com/ThomasRohde/jsonibase/blob/main/CHANGELOG.md"
+Changelog = "https://github.com/ThomasRohde/jsonibase/blob/master/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling>=1.27"]
