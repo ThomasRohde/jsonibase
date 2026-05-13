@@ -1,7 +1,6 @@
 # Changelog
 
-## [Unreleased]
-
+## [0.1.0] - 2026-05-13
 ### Added
 - Initial alpha package for typed JSONL-backed record collections.
 - Local SQLite index with FTS5 and bundled Model2Vec embeddings.
